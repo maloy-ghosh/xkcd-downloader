@@ -1,0 +1,118 @@
+#!/bin/bash
+urlencoder(){
+ip=$1
+i=0
+len=${#ip}
+len=$(( len - 1 ))
+op=''
+while [ $i -lt $len ]; 
+do
+	temp=`echo ${ip:$i:1}`
+	temp2=`python -c "import urllib, sys; print urllib.quote(sys.argv[1])" $temp`
+	op="$op$temp2"
+	
+	i=$(( i + 1 ))
+done 
+}
+
+
+
+if zenity --question --text="Hi,$USER This script will create a folder in your desktop and download from internet and python is required in sytem: Continue?"; then
+	if zenity --question --text="ARE YOU BEHIND A PROXY NETWORK?"; then
+	
+		if [ -z "$http_proxy" ] || [ -z "$HTTP_PROXY"] ; then
+			zenity --info --text="http_proxy needs to be set"
+			USER_DETAILS=`zenity --forms --title "AUTHENTICATION DETAILS" \
+									--separator="|" \
+									--add-entry="User Name" \
+							 		--add-password="Password" \
+
+			#extracting user info				 		
+			user=`echo $USER_DETAILS | cut -d '|' -f1`
+			password=`echo $USER_DETAILS | cut -d '|' -f2`
+
+
+			server=`zenity --forms --title "SERVER DETAILS" \
+					--separator="," \
+					--add-entry="server name" \
+			 		--add-entry="port"`
+			host=`echo $server | cut -d ','  -f1 `
+			port=`echo $server | cut -d ',' -f2 `
+			urlencoder `echo $user | sed  's/\$/\\\$/p' | sed -n 1p`
+			user=$op
+			urlencoder `echo $password | sed 's/\$/\\\$/p' | sed -n 1p`
+			password=$op
+			export http_proxy=`echo http://$user:$password@$host:$port`
+			if zenity --question --text="Do you want to set http_proxy permanently? Press OK to modify ~/.bashrc file"; then
+
+				echo "export http_proxy=$http_proxy" >> $HOME/.bashrc
+			fi
+		fi
+
+
+
+	
+	fi
+	
+	DIR="$HOME/Desktop/xkcd"
+	cd $DIR
+
+	if [[ `ls | grep already` -ne "already" ]]; then
+
+		echo "No download history exists: Creating a history file "
+		touch already
+		echo "" >already
+		echo "history file created as $DIR/already"
+	fi
+
+
+	i=1
+	while [[ true ]]; do
+		#statements
+		echo "Checking whether http://xkcd.com/$i/ has already been downloaded"
+		if [[ $i = 404 ]]; then
+			#statements
+			echo "http://xkcd.com/$i returns 404 error"
+			i=`expr $i + 1`
+			continue
+		fi
+		if [[ `cat already | awk '{print $1}' |sed -n "/\<$i\>/="` -eq "" ]]; then
+			#statements
+			echo "----------------------"
+			echo "Not found in history"
+			echo "----------------------"
+			wget -q `echo "http://xkcd.com/$i/"` -O temp
+			j=`sed -n '/div id="comic"/=' temp`
+			if [[ "$j" -eq "" ]]; then
+				#statements
+				break
+			fi
+			j=`expr $j + 1`	
+			k=`sed -n "$j p" temp | grep -o 'http://[a-z0-9A-Z.,-+_-(]*["]'`
+			var=`echo $k | sed -n -e 's/http:\/\/imgs.xkcd.com\/comics\///p'| sed -n -e 's/"//p'`
+			wget -q `echo $k|sed -n -e 's/"//p'`
+			echo "------------------------------"
+			echo "http:xkcd.com/$i/ downloaded"
+			echo "------------------------------"
+			echo "$i. 	$var" >> already
+		else
+			echo "Already downloaded"
+			
+			#echo ""
+		fi
+		disp=`cat already | awk '{print $1}' | sed -n "/\<$i\>/="`
+		echo "The file exists at"
+		echo "------------------------------------------------"
+		find `pwd` -name `cat already | awk '{print $2}' | sed -n "$disp p"`
+		echo "------------------------------------------------"
+		#echo "already downloaded"
+		#Show the path here
+		i=`expr $i + 1` 
+	done
+
+	echo "Finished downloading"
+		
+else
+	zenity --error --text="You pressed No\!"
+    	exit
+fi
