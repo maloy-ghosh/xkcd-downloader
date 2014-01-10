@@ -112,4 +112,3 @@ else
 	zenity --error --text="You pressed No\!"
     exit
 fi
-	
