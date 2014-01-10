@@ -53,7 +53,13 @@ if zenity --question --text="Hi,$USER This script will create a folder in your d
 	fi
 
 	DIR="$HOME/Desktop/xkcd"
+
+	if [[ ! -d $DIR ]]; then
+		mkdir $DIR
+	fi
 	cd $DIR
+
+
 
 	if [[ `ls | grep already` -ne "already" ]]; then
 
@@ -79,7 +85,7 @@ if zenity --question --text="Hi,$USER This script will create a folder in your d
 			echo "----------------------"
 			echo "Not found in history"
 			echo "----------------------"
-			wget -q `echo "http://xkcd.com/$i/"` -O temp
+			wget -q `echo "https://xkcd.com/$i/"` -O temp
 			j=`sed -n '/div id="comic"/=' temp`
 			if [[ "$j" -eq "" ]]; then
 				#statements
@@ -88,7 +94,7 @@ if zenity --question --text="Hi,$USER This script will create a folder in your d
 			j=`expr $j + 1`	
 			k=`sed -n "$j p" temp | grep -o 'http://[a-z0-9A-Z.,-+_-(]*["]'`
 			var=`echo $k | sed -n -e 's/http:\/\/imgs.xkcd.com\/comics\///p'| sed -n -e 's/"//p'`
-			wget -q `echo $k|sed -n -e 's/"//p'`
+			wget -q `echo $k|sed -n -e 's/"//p'|sed -n -e 's/http/https/p'`
 			echo "------------------------------"
 			echo "http:xkcd.com/$i/ downloaded"
 			echo "------------------------------"
